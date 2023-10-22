@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Login numérique</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+    <style>
+        table { border: 0.2em black solid; margin-left: 3em; cursor: pointer }
+        .case { width: 12; height: 12; background-color: grey }
+        .activecase { background-color: white }
+        input { height: 1.5em; width: 18em; display: block }
+        input[name="code"] { display: disabled }
+    </style>
+    <script>
+		var maxChiffres = 6;
+		var nbSoumissions = 0;
+        var nbTouches = 0;
+        var vdef = "valeur du code saisi : ";
+        var maxTentatives = 3;
+        var maxTouches = 6;
+        var dimCarre = 4;
+        var allcases;
+        var activecases;
+        var icode;
+        var form;
+        var msg;
+
+        function init() {
+            allcases = $('#clavier td');
+            activecases = $('#clavier .activecase');
+            icode = $('input[name="code"]');
+            form = $('#f1');
+            msg = $('#msg');
+            icode.val('');
+            allcases.on('click', touche);
+            form.on('submit', soumettre);
+            $('input[type="reset"]').click(effacerCode);
+            remplirClavierNum();
+        }
+
+        function touche() {
+            if (nbTouches >= maxTouches) {
+                return;
+            }
+            var codeValue = icode.val();
+            var toucheText = $(this).text();
+            codeValue += toucheText;
+            icode.val(codeValue);
+            nbTouches++;
+        }
+
+        function soumettre(ev) {
+            ev.preventDefault();
+            if (nbSoumissions >= maxTentatives || icode.val().length !== maxChiffres) {
+                return;
+            }
+            var nom = $('input[name="nom"]').val();
+            var code = icode.val();
+            $.ajax({
+                url: 'http://vs-wamp/dep_info/infoa2/clavierNum/connexionAjax.php',
+                method: 'POST',
+                data: { nom: nom, code: code },
+                success: function(response) {
+                    if (response === 'OK') {
+                        alert('Code valide ! Redirection...');
+                    } else {
+                        alert('Code invalide. Réessayez.');
+                    }
+                },
+                error: function() {
+                    alert('Erreur lors de la soumission du formulaire.');
+                },
+                complete: function() {
+                    effacerCode();
+                    nbSoumissions++;
+                }
+            });
+        }
+
+        function effacerCode() {
+            icode.val('');
+            nbTouches = 0;
+        }
+
+        function remplirClavierNum() {
+            allcases.removeClass('activecase');
+            var activeCells = allcases.filter('.case').get().sort(function () {
+                return 0.5 - Math.random();
+            }).slice(0, 10);
+            $(activeCells).addClass('activecase');
+            var grayCells = $('.case.activecase');
+            var chiffresDisponibles = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+            grayCells.each(function () {
+                var chiffreIndex = Math.floor(Math.random() * chiffresDisponibles.length);
+                var chiffre = chiffresDisponibles[chiffreIndex];
+                $(this).text(chiffre);
+                chiffresDisponibles.splice(chiffreIndex, 1);
+            });
+        }
+
+        $(document).ready(function() {
+            init();
+        });
+    </script>
+</head>
+<body>
+    <h2>Login numérique</h2>
+    <h3>Clavier de saisie de votre code (3 tentatives maximum)</h3>
+    <table id="clavier">
+        <tr>
+            <td class="case activecase"></td>
+            <td class="case activecase"></td>
+            <td class="case"></td>
+            <td class="case activecase"></td>
+        </tr>
+        <tr>
+            <td class="case"></td>
+            <td class="case activecase"></td>
+            <td class="case activecase"></td>
+            <td class="case"></td>
+        </tr>
+        <tr>
+            <td class="case activecase"></td>
+            <td class="case activecase"></td>
+            <td class="case activecase"></td>
+            <td class="case"></td>
+        </tr>
+        <tr>
+            <td class="case"></td>
+            <td class="case"></td>
+            <td class="case activecase"></td>
+            <td class="case activecase"></td>
+        </tr>
+    </table>
+    <form id="f1" method="post" action="">
+        <div>
+            <input type="text" name="nom" placeholder="Saisir votre nom, svp:"/>
+            <input type="text" name="code" value=""/>
+        </div>
+        <input type="submit" value="Valider">
+        <input type="reset" value="Effacer">
+    </form>
+    <div id="msg"></div>
+</body>
+</html>

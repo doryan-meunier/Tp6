@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Application Météo</title>
+</head>
+<body>
+  <h1>Obtenir la Météo</h1>
+  <form>
+    <label for="adresse">Adresse:</label>
+    <input type="text" id="adresse" placeholder="Entrez une adresse">
+    <button type="button" onclick="obtenirCoordonnees()">Obtenir Coordonnées</button>
+  </form>
+  <p id="latitude"></p>
+  <p id="longitude"></p>
+  <button type="button" onclick="obtenirMeteo()">Obtenir Météo</button>
+  <div id="resultat"></div>
+  <script>
+    const appId = "4a2be894cfd151121c76e505a597baf0"; // Votre clé API OpenWeather
+
+    async function obtenirCoordonnees() {
+  const adresse = document.getElementById("adresse").value;
+  if (adresse) {
+    const nominatimURL = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(adresse)}`;
+    try {
+      const response = await fetch(nominatimURL);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.length > 0) {
+          const latitude = data[0].lat;
+          const longitude = data[0].lon;
+          document.getElementById("latitude").textContent = `Latitude: ${latitude}`;
+          document.getElementById("longitude").textContent = `Longitude: ${longitude}`;
+        } else {
+          console.error("Adresse invalide.");
+        }
+      } else {
+        console.error("Erreur lors de la récupération des coordonnées.");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des coordonnées.", error);
+    }
+  } else {
+    console.error("Veuillez entrer une adresse.");
+  }
+}
+
+async function obtenirMeteo() {
+  const latitude = document.getElementById("latitude").textContent.split(": ")[1];
+  const longitude = document.getElementById("longitude").textContent.split(": ")[1];
+  if (latitude && longitude) {
+    const openWeatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${appId}`;
+    try {
+      const response = await fetch(openWeatherURL);
+      if (response.ok) {
+        const data = await response.json();
+        // Affichez les informations météorologiques à l'utilisateur.
+        const temperature = data.main.temp;
+        const description = data.weather[0].description;
+        const humidite = data.main.humidity;
+        const resultat = `Température: ${temperature}°C<br>Description: ${description}<br>Humidité: ${humidite}%`;
+        document.getElementById("resultat").innerHTML = resultat;
+      } else {
+        console.error("Erreur lors de la récupération des données météorologiques.");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données météorologiques.", error);
+    }
+  } else {
+    console.error("Obtenez d'abord les coordonnées.");
+  }
+}
+</script>
+</body>
+</html>
